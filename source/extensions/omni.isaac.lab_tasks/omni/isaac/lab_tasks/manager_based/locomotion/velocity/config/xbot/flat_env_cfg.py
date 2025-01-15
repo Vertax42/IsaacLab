@@ -39,13 +39,13 @@ class XbotFlatEnvCfg_PLAY(XbotFlatEnvCfg):
         self.scene.env_spacing = 2.5
 
         # disable command randomization
-        self.commands.base_velocity.resampling_time_range = (1e9, 1e9)
-        self.commands.base_velocity.rel_standing_envs = 0.0  # 或保持原值
-        self.commands.base_velocity.rel_heading_envs = 0.0  # 如果不想随机 heading
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.heading = (-0.0, 0.0)
+        # self.commands.base_velocity.resampling_time_range = (1e9, 1e9)
+        # self.commands.base_velocity.rel_standing_envs = 0.0  # 或保持原值
+        # self.commands.base_velocity.rel_heading_envs = 0.0  # 如果不想随机 heading
+        # self.commands.base_velocity.ranges.lin_vel_x = (-0.0, 0.0)
+        # self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
+        # self.commands.base_velocity.ranges.ang_vel_z = (-0.0, 0.0)
+        # self.commands.base_velocity.ranges.heading = (-0.0, 0.0)
 
         # disable randomization for play
         self.observations.policy.enable_corruption = False

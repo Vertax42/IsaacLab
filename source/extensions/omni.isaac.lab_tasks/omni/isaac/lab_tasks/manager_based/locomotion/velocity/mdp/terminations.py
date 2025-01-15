@@ -196,3 +196,24 @@ def illegal_contact(
         > threshold,
         dim=1,
     )
+
+
+def height_below_threshold(
+    env: ManagerBasedRLEnv, threshold: float, asset_cfg: SceneEntityCfg
+) -> torch.Tensor:
+    """Terminate when the height of the asset's root position is below the threshold.
+
+    Args:
+        env (ManagerBasedRLEnv): The environment instance.
+        threshold (float): The height threshold below which termination is triggered.
+        asset_cfg (SceneEntityCfg): Configuration for the asset (e.g., robot).
+
+    Returns:
+        torch.Tensor: A boolean tensor indicating whether each environment should terminate.
+    """
+    # Extract the asset's root position in the world frame
+    asset: env.scene[asset_cfg.name]
+    root_pos_z = asset.data.root_pos_w[:, 2]  # Z-axis position of the root
+
+    # Check if the height is below the threshold
+    return root_pos_z < threshold

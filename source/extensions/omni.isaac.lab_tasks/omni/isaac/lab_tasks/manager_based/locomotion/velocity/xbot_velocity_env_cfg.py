@@ -248,6 +248,17 @@ class RewardsCfg:
         weight=0.5,
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
+
+    # track_lin_vel_xy = RewTerm(
+    #     func=mdp.track_lin_vel_xy_exp,
+    #     weight=1.0,
+    #     params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+    # )
+    # track_ang_vel_z = RewTerm(
+    #     func=mdp.track_ang_vel_z_exp,
+    #     weight=0.5,
+    #     params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+    # )
     # -- penalties
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
@@ -317,6 +328,19 @@ class CurriculumCfg:
 
     terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
 
+    # dof_torques_l2 = CurrTerm(
+    #     func=mdp.modify_reward_weight,
+    #     params={"term_name": "dof_torques_l2", "weight": -3e-5, "num_steps": 9600},
+    # )
+    # flat_orientation_l2 = CurrTerm(
+    #     func=mdp.modify_reward_weight,
+    #     params={"term_name": "flat_orientation_l2", "weight": -1.0, "num_steps": 9600},
+    # )
+    # feet_distance = CurrTerm(
+    #     func=mdp.modify_reward_weight,
+    #     params={"term_name": "feet_distance", "weight": 0.25, "num_steps": 4800},
+    # )
+
 
 ##
 # Environment configuration
@@ -342,10 +366,10 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 10
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.005
+        self.sim.dt = 0.001
         self.sim.render_interval = self.decimation
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material

@@ -180,7 +180,11 @@ def joint_acc_l2(
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    return torch.sum(torch.square(asset.data.joint_acc[:, asset_cfg.joint_ids]), dim=1)
+    num_joints = len(asset_cfg.joint_ids)
+    return (
+        torch.sum(torch.square(asset.data.joint_acc[:, asset_cfg.joint_ids]), dim=1)
+        / num_joints
+    )
 
 
 def joint_deviation_l1(
@@ -194,7 +198,10 @@ def joint_deviation_l1(
         asset.data.joint_pos[:, asset_cfg.joint_ids]
         - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
     )
-    return torch.sum(torch.abs(angle), dim=1)
+    # calculate the number of joints
+    num_joints = len(asset_cfg.joint_ids)
+    # return the normalized L1 deviation
+    return torch.sum(torch.abs(angle), dim=1) / num_joints
 
 
 def joint_pos_limits(
@@ -350,7 +357,7 @@ def feet_contact(
     reward = (contact_num != expect_contact_num).float()
     # no reward for zero command
     reward *= (
-        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
     )
     return reward
 
@@ -421,12 +428,40 @@ def feet_air_time(
     reward = torch.sum((last_air_time - threshold) * first_contact, dim=1)
     # no reward for zero command
     reward *= (
-        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
     )
     return reward
 
 
 def feet_air_time_positive_biped(
+    env, command_name: str, threshold: float, sensor_cfg: SceneEntityCfg
+) -> torch.Tensor:
+    """Reward long steps taken by the feet for bipeds.
+
+    This function rewards the agent for taking steps up to a specified threshold and also keep one foot at
+    a time in the air.
+
+    If the commands are small (i.e. the agent is not supposed to take a step), then the reward is zero.
+    """
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    # compute the reward
+    air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
+    contact_time = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids]
+    in_contact = contact_time > 0.0
+    in_mode_time = torch.where(in_contact, contact_time, air_time)
+    single_stance = torch.sum(in_contact.int(), dim=1) == 1
+    reward = torch.min(
+        torch.where(single_stance.unsqueeze(-1), in_mode_time, 0.0), dim=1
+    )[0]
+    reward = torch.clamp(reward, max=threshold)
+    # no reward for zero command
+    reward *= (
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
+    )
+    return reward
+
+
+def feet_air_time_positive_biped_custom(
     env, command_name: str, threshold: float, sensor_cfg: SceneEntityCfg
 ) -> torch.Tensor:
     """Reward long steps taken by the feet for bipeds.
@@ -476,7 +511,7 @@ def feet_air_time_positive_biped(
     reward += imbalance_penalty
     # no reward for zero command
     reward *= (
-        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
     )
     return reward
 
@@ -523,7 +558,10 @@ def track_lin_vel_xy_yaw_frame_exp(
         ),
         dim=1,
     )
-    return torch.exp(-lin_vel_error / std**2)
+    no_zero_command = (
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
+    )
+    return torch.exp(-lin_vel_error / std**2) * no_zero_command
 
 
 def track_ang_vel_z_world_exp(
@@ -539,7 +577,10 @@ def track_ang_vel_z_world_exp(
         env.command_manager.get_command(command_name)[:, 2]
         - asset.data.root_ang_vel_w[:, 2]
     )
-    return torch.exp(-ang_vel_error / std**2)
+    no_zero_command = (
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
+    )
+    return torch.exp(-ang_vel_error / std**2) * no_zero_command
 
 
 def stand_still_when_zero_command(
@@ -629,7 +670,7 @@ def feet_distance(
     ) / 2
     # no reward for zero command
     reward *= (
-        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
     )
     return reward
 
@@ -656,6 +697,6 @@ def knee_distance(
     ) / 2
     # no reward for zero command
     reward *= (
-        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
+        torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.01
     )
     return reward

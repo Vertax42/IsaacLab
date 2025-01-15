@@ -115,7 +115,7 @@ class UniformVelocityCommand(CommandTerm):
             raise ValueError(
                 f"Expected command shape {(self.num_envs, 4)}, got {value.shape}"
             )
-        print(f"[DEBUG] Command set to: {value}")  # 添加调试信息
+        # print(f"[DEBUG] Command set to: {value}")  # 添加调试信息
         self.vel_command_b = value[:, :3].clone()
         self.heading_target = value[:, 3].clone()
         # print(

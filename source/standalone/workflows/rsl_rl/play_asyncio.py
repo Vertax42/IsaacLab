@@ -181,7 +181,7 @@ def main():
         with torch.inference_mode():
             # get keyboard command
             current_cmd += teleop_interface.advance()
-            print(f"Current command: {current_cmd}")
+            # print(f"Current command: {current_cmd}")
             command_tensor = (
                 torch.tensor(
                     current_cmd, device=env.unwrapped.device, dtype=torch.float32
@@ -197,6 +197,9 @@ def main():
                 first_reset = False
             # agent stepping
             actions = policy(obs)
+            print(f"Timestep: {timestep}")
+            print(f"Observations: {obs}")
+            print(f"Actions: {actions}")
             # env stepping
             obs, _, _, _ = env.step(actions)
         if args_cli.video:
